@@ -1,0 +1,131 @@
+---
+title: 'Análise'
+format:
+  html:
+    toc: true
+    html-math-method: katex
+    css: styles.css
+---
+
+
+```{r}
+#| echo: true
+#| warning: false
+
+library(tidyverse)
+```
+
+
+```{r}
+#| code-fold: true
+#| code-summary: "Visualizar código"
+#| warning: false
+
+# dados processados sobre absenteismo
+df_absenteismo = read.csv('absenteismo_processed.csv')
+# dados processados sobre alertas no whatsapp
+df_whatsapp = read.csv('whatsapp_processed.csv')
+```
+
+
+```{r}
+#| code-fold: true
+#| code-summary: 'Código'
+#| warning: false
+#| fig-width: 14
+#| fig-height: 10
+#| out-width: '100%'
+
+# calcular os totais e a taxa de absenteísmo
+df_totais = df_absenteismo |> 
+  group_by(periodo) |> 
+  summarise(Faltas = sum(faltas, na.rm = TRUE),
+            Agendamentos = sum(agendamentos, na.rm = TRUE),
+            TaxaAbsenteismo = (sum(Faltas) / sum(Agendamentos)) * 100,
+            .groups = 'drop')
+
+# calcular o fator de escala para a linha
+max_quantidade = max(df_totais$Faltas, df_totais$Agendamentos, na.rm = TRUE)
+fator_escala = max_quantidade / 100
+
+# contruindo o grafico com os tres indicadores
+df_totais |> 
+  pivot_longer(
+    cols = c(Faltas, Agendamentos),
+    names_to = 'Tipo',
+    values_to = 'Quantidade') |> 
+  ggplot(aes(x = periodo)) +
+  geom_bar(aes(y = Quantidade, fill = Tipo),
+           stat = 'identity', position = 'dodge', alpha = 0.8) +
+  geom_text(aes(y = Quantidade/2, label = ifelse(Tipo == 'Faltas', Quantidade, ''), 
+                group = Tipo),position = position_dodge(width = 0.9),
+            color = 'white', size = 3.5, fontface = 'bold',
+            show.legend = FALSE) +
+  geom_text(aes(y = Quantidade, label = ifelse(Tipo == 'Agendamentos', Quantidade, ''), group = Tipo),
+            position = position_dodge(width = 0.9),
+            vjust = -0.5, size = 3.5, fontface = 'bold', color = '#3BA9DB',
+            show.legend = FALSE) +
+  
+  # Linha para a taxa de absenteísmo
+  geom_line(aes(y = TaxaAbsenteismo * fator_escala, group = 1), 
+            color = '#2c5282', size = 1.5, alpha = 0.8) +
+  geom_point(aes(y = TaxaAbsenteismo * fator_escala), 
+             color = '#2c5282', size = 3) +
+  geom_text(aes(y = TaxaAbsenteismo * fator_escala, 
+                label = paste0(round(TaxaAbsenteismo, 1), '%')),
+            vjust = -1, size = 3.5, color = '#2c5282', fontface = 'bold') +
+  scale_y_continuous(
+    name = '',
+    sec.axis = sec_axis(~ . / fator_escala, 
+                        name = '',
+                        labels = function(x) paste0(round(x, 2), '%'))
+  ) +
+  labs(title = '', x = '', fill = '') +
+  theme_minimal() +
+  theme(
+    axis.text.x = element_text(angle = 45, hjust = 1),
+    axis.title.y.left = element_text(color = 'black'),
+    axis.text.y.left = element_text(color = 'black'),
+    axis.title.y.right = element_text(color = 'black'),
+    axis.text.y.right = element_text(color = 'black'),
+    panel.grid.major.y = element_line(color = 'gray80'),
+    panel.grid.minor.y = element_blank(),
+    legend.position = 'top'
+  ) +
+  scale_fill_manual(values = c('Faltas' = '#1C4F66', 'Agendamentos' = '#3BA9DB'))
+```
+
+
+
+```{r}
+# # Gráfico com facetas por unidade
+# df_abstencoes %>%
+#   group_by(Unidade, AnoMês) %>%
+#   summarise(
+#     Faltas = sum(Faltas, na.rm = TRUE),
+#     Agendamentos = sum(Agendamentos, na.rm = TRUE),
+#     .groups = 'drop'
+#   ) %>%
+#   pivot_longer(cols = c(Faltas, Agendamentos), 
+#                names_to = "Tipo", 
+#                values_to = "Quantidade") %>%
+#   ggplot(aes(x = AnoMês, y = Quantidade, group = Tipo, color = Tipo)) +
+#   geom_line(size = 1) +
+#   facet_wrap(~ Unidade, scales = "free_y") +
+#   labs(
+#     title = "Evolução de Faltas e Agendamentos por Unidade",
+#     x = "Mês/Ano",
+#     y = "Quantidade"
+#   ) +
+#   theme_minimal() +
+#   theme(
+#     axis.text.x = element_text(angle = 45, hjust = 1),
+#     legend.position = "bottom"
+#   )
+```
+
+No geral, os meses com os maiores números de faltas foram os meses de outubro de 2024, novembro de 2024, agosto de 2024 e dezembro de 2024
+
+
+
+
