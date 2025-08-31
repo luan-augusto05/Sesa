@@ -5,16 +5,18 @@ format:
     toc: true
     html-math-method: katex
     css: styles.css
+server: shiny
 ---
-
 
 ```{r}
 #| echo: true
 #| warning: false
 
 library(tidyverse)
+library(shiny)
+library(ggplot2)
+library(plotly)
 ```
-
 
 ```{r}
 #| code-fold: true
@@ -26,7 +28,6 @@ df_absenteismo = read.csv('absenteismo_processed.csv')
 # dados processados sobre alertas no whatsapp
 df_whatsapp = read.csv('whatsapp_processed.csv')
 ```
-
 
 ```{r}
 #| code-fold: true
@@ -95,8 +96,6 @@ df_totais |>
   scale_fill_manual(values = c('Faltas' = '#1C4F66', 'Agendamentos' = '#3BA9DB'))
 ```
 
-
-
 ```{r}
 # # Gráfico com facetas por unidade
 # df_abstencoes %>%
@@ -125,7 +124,3 @@ df_totais |>
 ```
 
 No geral, os meses com os maiores números de faltas foram os meses de outubro de 2024, novembro de 2024, agosto de 2024 e dezembro de 2024
-
-
-
-

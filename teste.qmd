@@ -1,0 +1,57 @@
+---
+title: "Teste Shiny"
+format: html
+runtime: shiny
+---
+
+```{r}
+library(shiny)
+# menu suspenso
+selectInput("hospital", "Hospital:",
+            choices = c("Hospital A", "Hospital B", "Hospital C"))
+```
+
+```{r}
+# gráfico que depende do input
+renderPlot({
+  hosp <- input$hospital
+  set.seed(123)
+  df <- data.frame(
+    x = 1:10,
+    y = rnorm(10, mean = ifelse(hosp == "Hospital A", 5,
+                           ifelse(hosp == "Hospital B", 10, 15)))
+  )
+  plot(df$x, df$y, type = "b", main = paste("Dados de", hosp))
+})
+
+```
+
+```{r}
+hos <- unique(df_absenteismo$hospital_padronizado)
+selectInput("hospital", "Hospital:", choices = hos, selected = hos[1])
+plotOutput("Plot")
+```
+
+```{r}
+#| context: server
+library(ggplot2)
+library(tidyverse)
+# dados processados sobre absenteismo
+df_absenteismo = read.csv('absenteismo_processed.csv')
+selectedData <- reactive({
+  df_absenteismo |>
+  dplyr::filter(hospital_padronizado == input$hospital)
+  })
+output$Plot <- renderPlot({
+  set.seed(123)
+  hosp <- input$hospital
+  selectedData() |> 
+  pivot_longer(
+    cols = c(Faltas, Agendamentos),
+    names_to = 'Tipo',
+    values_to = 'Quantidade') |> 
+  ggplot(aes(x = periodo)) +
+  geom_bar(aes(y = Quantidade, fill = Tipo),
+           stat = 'identity', position = 'dodge', alpha = 0.8)
+})
+```
