@@ -103,3 +103,23 @@ df_totais |>
     legend.position = 'top'
   ) +
   scale_fill_manual(values = c('Faltas' = '#1C4F66', 'Agendamentos' = '#3BA9DB'))
+
+
+# 🔍 na base df_whatsapp estao os registros dos disparos apos a politica publica ser implementada, ou seja, ha registros de marco ate o mes de agosto
+
+# 🔍 na base df_whatsapp ha registros de 69 hospitais, entretanto na base df_absenteismo ha registros de 12 hospitais, portanto para efeito de comparacao entre antes e depois da politica serao considerados os doze hospitais da base df_absenteismo
+
+glimpse(df_whatsapp)
+
+# 
+
+
+
+
+
+
+
+
+
+
+
