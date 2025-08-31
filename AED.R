@@ -7,48 +7,12 @@ df_absenteismo = read.csv('absenteismo_processed.csv')
 # dados processados sobre alertas no whatsapp
 df_whatsapp = read.csv('whatsapp_processed.csv')
 
-glimpse(df_whatsapp)
 glimpse(df_absenteismo)
-length(table(df_absenteismo$hospital_padronizado))
-# table(df_alertas$severidade)
-# table(df_alertas$hospital)
-# table(df_alertas$especialidade)
-# table(df_alertas$municipio)
-# length(table(df_alertas$municipio))
-
-df_absenteismo |> 
-  group_by(periodo) |> 
-  summarise(
-    Faltas = sum(faltas, na.rm = TRUE),
-    Agendamentos = sum(agendamentos, na.rm = TRUE),
-    .groups = 'drop') |> 
-  pivot_longer(
-    cols = c(Faltas, Agendamentos),
-    names_to = 'Tipo',
-    values_to = 'Quantidade') |> 
-  ggplot(aes(x = periodo, y = Quantidade, fill = Tipo)) +
-  geom_bar(stat = 'identity', position = 'dodge', alpha = 0.8) +
-  geom_text(aes(label = Quantidade, color = Tipo),
-            position = position_dodge(width = 0.9),
-            vjust = -0.5, size = 3, fontface = 'bold',
-            show.legend = F) +  
-  labs(title = '', x = '', y = '', fill = '') +
-  theme_minimal() +
-  theme(
-    axis.text.x = element_text(angle = 45, hjust = 1),
-    axis.text.y = element_blank(),
-    axis.ticks.y = element_blank(),
-    panel.grid.major.y = element_blank(),
-    panel.grid.minor.y = element_blank(),
-    legend.position = 'top'
-  ) +
-  scale_fill_manual(values = c('Faltas' = '#1C4F66', 'Agendamentos' = '#3BA9DB')) +
-  scale_color_manual(values = c('Faltas' = '#1C4F66', 'Agendamentos' = '#3BA9DB')) +
-  scale_y_continuous(expand = expansion(mult = c(0, 0.1)))
-
+glimpse(df_whatsapp)
 
 # calcular os totais e a taxa de absenteísmo
 df_totais = df_absenteismo |> 
+  filter(hospital_padronizado != 'HOSPITAL DE MESSEJANA') |> 
   group_by(periodo) |> 
   summarise(Faltas = sum(faltas, na.rm = TRUE),
             Agendamentos = sum(agendamentos, na.rm = TRUE),
@@ -59,7 +23,7 @@ df_totais = df_absenteismo |>
 max_quantidade = max(df_totais$Faltas, df_totais$Agendamentos, na.rm = TRUE)
 fator_escala = max_quantidade / 100
 
-# contruindo o grafico com os tres indicadores
+# 📈 contruindo o grafico com os tres indicadores
 df_totais |> 
   pivot_longer(
     cols = c(Faltas, Agendamentos),
@@ -104,6 +68,92 @@ df_totais |>
     legend.position = 'top'
   ) +
   scale_fill_manual(values = c('Faltas' = '#1C4F66', 'Agendamentos' = '#3BA9DB'))
+
+
+# 📈 gerando o grafico com os tres indicadores para cada hospital
+hospitais = unique(df_absenteismo$hospital_padronizado)
+hospitais = hospitais[hospitais != 'HOSPITAL DE MESSEJANA']
+
+# funcao para criar o grafico para cada hospital
+criar_grafico_hospital = function(hospital_nome) {
+  
+  # filtrar dados para o hospital especifico
+  df_hospital = df_absenteismo |> 
+    filter(hospital_padronizado == hospital_nome) |> 
+    group_by(periodo) |> 
+    summarise(
+      Faltas = sum(faltas, na.rm = TRUE),
+      Agendamentos = sum(agendamentos, na.rm = TRUE),
+      TaxaAbsenteismo = ifelse(Agendamentos > 0, (Faltas / Agendamentos) * 100, 0),
+      .groups = 'drop'
+    )
+  
+  # calcular fator de escala para este hospital
+  max_quantidade = max(df_hospital$Faltas, df_hospital$Agendamentos, na.rm = TRUE)
+  if (max_quantidade == 0 || is.infinite(max_quantidade)) {
+    fator_escala = 1
+  } else {
+    fator_escala = max_quantidade / 100
+  }
+  
+  # criar o gráfico
+  p = df_hospital |> 
+    pivot_longer(
+      cols = c(Faltas, Agendamentos),
+      names_to = 'Tipo',
+      values_to = 'Quantidade') |> 
+    ggplot(aes(x = periodo)) +
+    geom_bar(aes(y = Quantidade, fill = Tipo),
+             stat = 'identity', position = 'dodge', alpha = 0.8) +
+    geom_text(aes(y = Quantidade/2, label = ifelse(Tipo == 'Faltas', Quantidade, ''), 
+                  group = Tipo),
+              position = position_dodge(width = 0.9),
+              color = 'white', size = 3, fontface = 'bold',
+              show.legend = FALSE) +
+    geom_text(aes(y = Quantidade, label = ifelse(Tipo == 'Agendamentos', Quantidade, ''), 
+                  group = Tipo),
+              position = position_dodge(width = 0.9),
+              vjust = -0.5, size = 3, fontface = 'bold', color = '#3BA9DB',
+              show.legend = FALSE) +
+    geom_line(aes(y = TaxaAbsenteismo * fator_escala, group = 1), 
+              color = '#2c5282', size = 1.5, alpha = 0.8) +
+    geom_point(aes(y = TaxaAbsenteismo * fator_escala), 
+               color = '#2c5282', size = 3) +
+    geom_text(aes(y = TaxaAbsenteismo * fator_escala, 
+                  label = paste0(round(TaxaAbsenteismo, 1), '%')),
+              vjust = -1, size = 3, color = '#2c5282', fontface = 'bold') +
+    scale_y_continuous(
+      name = '',
+      sec.axis = sec_axis(~ . / fator_escala, 
+                          name = '',
+                          labels = function(x) paste0(round(x, 1), '%'))
+    ) +
+    labs(
+      title = hospital_nome,
+      x = '', 
+      fill = ''
+    ) +
+    theme_minimal() +
+    theme(
+      axis.text.x = element_text(angle = 45, hjust = 1, size = 8),
+      axis.title.y.left = element_text(color = 'black'),
+      axis.text.y.left = element_text(color = 'black'),
+      axis.title.y.right = element_text(color = 'black'),
+      axis.text.y.right = element_text(color = 'black'),
+      panel.grid.major.y = element_line(color = 'gray80'),
+      panel.grid.minor.y = element_blank(),
+      legend.position = 'top',
+      plot.title = element_text(face = 'bold', hjust = 0.5, size = 12)
+    ) +
+    scale_fill_manual(values = c('Faltas' = '#1C4F66', 'Agendamentos' = '#3BA9DB'))
+  
+  return(p)
+}
+
+# criar graficos para cada hospital
+for (hospital in hospitais) {
+  print(criar_grafico_hospital(hospital))
+}
 
 
 # 🔍 na base df_whatsapp estao os registros dos disparos apos a politica publica ser implementada, ou seja, ha registros de marco ate o mes de agosto
@@ -179,14 +229,15 @@ df_whatsapp_filtrado |>
                                '')), 
             color = 'white', size = 2.5, fontface = 'bold') +
   scale_fill_gradient(low = 'lightblue', high = 'darkblue', name = '', trans = 'log10') +
-  labs(title = '', subtitle = paste('Total de', format(sum(df_whatsapp_filtrado$count, na.rm = TRUE), big.mark = '.'), 'Disparos'),nx = '', y = '') +
+  labs(title = '', subtitle = paste('Total de', format(sum(df_whatsapp_filtrado$count, na.rm = TRUE), big.mark = '.'), 'Disparos'), x = '', y = '') +
   theme_minimal() +
   theme(
     axis.text.x = element_text(angle = 45, hjust = 1, size = 8),
     axis.text.y = element_text(size = 8),
     plot.title = element_text(face = 'bold', size = 14, hjust = 0.5),
     plot.subtitle = element_text(size = 10, hjust = 0.5),
-    panel.grid = element_blank())
+    panel.grid = element_blank(),
+    legend.position = 'none')
 
 
 # quantidade de disparos mensais
