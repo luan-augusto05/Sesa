@@ -113,11 +113,40 @@ glimpse(df_whatsapp)
 
 # 📈 visualizando o total de disparos por mes e por dia da semana 
 
+# filtrando os registros que estao em ambas as bases
+df_whatsapp_filtrado = df_whatsapp |> 
+  inner_join(df_absenteismo |> 
+               select(hospital_padronizado) |> 
+               distinct(), by = 'hospital_padronizado') |> 
+  filter(hospital_padronizado != 'HOSPITAL DE MESSEJANA')
+
+# a analise sera feita acerca desses 11 hospitais
+length(table(df_whatsapp_filtrado$hospital_padronizado))
+
+# total de disparos por hospital
+df_disparos = df_whatsapp_filtrado |> 
+  group_by(hospital_padronizado) |> 
+  summarise(disparos = sum(count, na.rm = TRUE)) |> 
+  arrange(desc(disparos))
 
 
+df_diparos |> 
+  ggplot(aes(x = reorder(hospital_padronizado, disparos), y = disparos)) +
+  geom_bar(stat = 'identity', fill = '#3BA9DB', alpha = 0.8) +
+  geom_text(aes(label = disparos), 
+            hjust = -0.1, size = 3.5, fontface = 'bold', color = 'black') +
+  coord_flip() +
+  labs(title = '',
+       x = '',
+       y = '') +
+  theme_minimal() +
+  theme(axis.text.y = element_text(size = 9),
+        plot.title = element_text(face = 'bold', hjust = 0.5),
+        panel.grid.major.y = element_blank()) +
+  scale_y_continuous(expand = expansion(mult = c(0, 0.1)))
 
 
-
+# a proxima etapa sera agrupar esses registros por mes
 
 
 
