@@ -1,5 +1,6 @@
 # pacotes
 library(tidyverse)
+library(lubridate)
 
 # dados processados sobre absenteismo
 df_absenteismo = read.csv('absenteismo_processed.csv')
@@ -130,7 +131,7 @@ df_disparos = df_whatsapp_filtrado |>
   arrange(desc(disparos))
 
 
-df_diparos |> 
+df_disparos |> 
   ggplot(aes(x = reorder(hospital_padronizado, disparos), y = disparos)) +
   geom_bar(stat = 'identity', fill = '#3BA9DB', alpha = 0.8) +
   geom_text(aes(label = disparos), 
@@ -146,9 +147,55 @@ df_diparos |>
   scale_y_continuous(expand = expansion(mult = c(0, 0.1)))
 
 
-# a proxima etapa sera agrupar esses registros por mes
+# 📈 visualizacao do total de disparos por cidade
+df_whatsapp |> 
+  count(cidade, tipo_alerta) |> 
+  rename(Frequencia = n) |> 
+  ggplot(aes(x = tipo_alerta, y = cidade, fill = Frequencia)) +
+  geom_tile(color = 'white', linewidth = 0.3) +
+  geom_text(aes(label = ifelse(Frequencia > 0, Frequencia, '')), 
+            color = 'white', size = 2.5, fontface = 'bold') +
+  scale_fill_gradient(low = 'lightblue', high = 'darkblue', 
+                      name = '', trans = 'log10') +
+  labs(title = '', subtitle = paste('Total de', sum(df_whatsapp$count), 'Disparos'),
+    x = '', y = '') +
+  theme_minimal() +
+  theme(
+    axis.text.x = element_text(angle = 45, hjust = 1, size = 8),
+    axis.text.y = element_text(size = 8),
+    plot.title = element_text(face = 'bold', size = 14, hjust = 0.5),
+    plot.subtitle = element_text(size = 10, hjust = 0.5),
+    panel.grid = element_blank())
 
 
+# 📈 visualizacao do total de disparos por hospital
+df_whatsapp_filtrado |> 
+  group_by(hospital_padronizado, tipo_alerta) |> 
+  summarise(Total_Disparos = sum(count, na.rm = TRUE), .groups = 'drop') |> 
+  ggplot(aes(x = tipo_alerta, y = hospital_padronizado, fill = Total_Disparos)) +
+  geom_tile(color = 'white', linewidth = 0.3) +
+  geom_text(aes(label = ifelse(Total_Disparos > 0, 
+                               format(Total_Disparos, big.mark = '.'), 
+                               '')), 
+            color = 'white', size = 2.5, fontface = 'bold') +
+  scale_fill_gradient(low = 'lightblue', high = 'darkblue', name = '', trans = 'log10') +
+  labs(title = '', subtitle = paste('Total de', format(sum(df_whatsapp_filtrado$count, na.rm = TRUE), big.mark = '.'), 'Disparos'),nx = '', y = '') +
+  theme_minimal() +
+  theme(
+    axis.text.x = element_text(angle = 45, hjust = 1, size = 8),
+    axis.text.y = element_text(size = 8),
+    plot.title = element_text(face = 'bold', size = 14, hjust = 0.5),
+    plot.subtitle = element_text(size = 10, hjust = 0.5),
+    panel.grid = element_blank())
+
+
+# quantidade de disparos mensais
+df_disparos_mensais = df_whatsapp_filtrado |> 
+  group_by(year, month, hospital_padronizado) |> 
+  summarise(total_disparos = sum(count, na.rm = TRUE), .groups = 'drop') |> 
+  arrange(year, month, desc(total_disparos)) |> 
+  mutate(mes_ano = paste(year, sprintf('%02d', month), sep = '-')) |>
+  select(year, month, mes_ano, everything())
 
 
 
