@@ -1,26 +1,28 @@
 ---
-title: 'Análise'
+title: 'Análise Exploratória'
 format:
   html:
     toc: true
     html-math-method: katex
     css: styles.css
-server: shiny
 ---
 
 ```{r}
 #| echo: true
 #| warning: false
+#| code-fold: true
+#| code-summary: 'Código'
 
+# 📚 Bibliotecas
 library(tidyverse)
 library(shiny)
-library(ggplot2)
 library(plotly)
 ```
 
 ```{r}
+#| echo: true
 #| code-fold: true
-#| code-summary: "Visualizar código"
+#| code-summary: 'Código'
 #| warning: false
 
 # dados processados sobre absenteismo
@@ -29,7 +31,24 @@ df_absenteismo = read.csv('absenteismo_processed.csv')
 df_whatsapp = read.csv('whatsapp_processed.csv')
 ```
 
+📑 Para a análise exploratória dos dados foram considerados os registros dos hospitais presentes nas duas bases disponibilizadas. Além disso, o HOSPITAL DE MESSEJANA não apresentou registros na base de absenteísmo.   
+
 ```{r}
+#| echo: true
+#| code-fold: true
+#| code-summary: 'Código'
+#| warning: false
+
+hospitais = unique(df_absenteismo$hospital_padronizado)
+hospitais = hospitais[hospitais != 'HOSPITAL DE MESSEJANA']
+
+hospitais
+```
+
+📑 Inicialmente, analisou-se o total de agendamentos, o total de faltas e a taxa de absenteísmo geral e por unidade hospitalar. No geral, os meses com os maiores números de faltas foram os meses de outubro de 2024, novembro de 2024, agosto de 2024 e dezembro de 2024, respectivamente. Também, observa-se uma queda consecutiva na taxa absenteísmo nos últimos três meses.
+
+```{r}
+#| echo: true
 #| code-fold: true
 #| code-summary: 'Código'
 #| warning: false
@@ -96,31 +115,182 @@ df_totais |>
   scale_fill_manual(values = c('Faltas' = '#1C4F66', 'Agendamentos' = '#3BA9DB'))
 ```
 
+📑 Analisando 
+
 ```{r}
-# # Gráfico com facetas por unidade
-# df_abstencoes %>%
-#   group_by(Unidade, AnoMês) %>%
-#   summarise(
-#     Faltas = sum(Faltas, na.rm = TRUE),
-#     Agendamentos = sum(Agendamentos, na.rm = TRUE),
-#     .groups = 'drop'
-#   ) %>%
-#   pivot_longer(cols = c(Faltas, Agendamentos), 
-#                names_to = "Tipo", 
-#                values_to = "Quantidade") %>%
-#   ggplot(aes(x = AnoMês, y = Quantidade, group = Tipo, color = Tipo)) +
-#   geom_line(size = 1) +
-#   facet_wrap(~ Unidade, scales = "free_y") +
-#   labs(
-#     title = "Evolução de Faltas e Agendamentos por Unidade",
-#     x = "Mês/Ano",
-#     y = "Quantidade"
-#   ) +
-#   theme_minimal() +
-#   theme(
-#     axis.text.x = element_text(angle = 45, hjust = 1),
-#     legend.position = "bottom"
-#   )
+#| echo: true
+#| code-fold: true
+#| code-summary: 'Código'
+#| warning: false
+#| fig-width: 14
+#| fig-height: 10
+#| out-width: '100%'
+
+# 📈 gerando o grafico com os tres indicadores para cada hospital
+hospitais = unique(df_absenteismo$hospital_padronizado)
+hospitais = hospitais[hospitais != 'HOSPITAL DE MESSEJANA']
+
+# funcao para criar o grafico para cada hospital
+criar_grafico_hospital = function(hospital_nome) {
+  
+  # filtrar dados para o hospital especifico
+  df_hospital = df_absenteismo |> 
+    filter(hospital_padronizado == hospital_nome) |> 
+    group_by(periodo) |> 
+    summarise(
+      Faltas = sum(faltas, na.rm = TRUE),
+      Agendamentos = sum(agendamentos, na.rm = TRUE),
+      TaxaAbsenteismo = ifelse(Agendamentos > 0, (Faltas / Agendamentos) * 100, 0),
+      .groups = 'drop'
+    )
+  
+  # calcular fator de escala para este hospital
+  max_quantidade = max(df_hospital$Faltas, df_hospital$Agendamentos, na.rm = TRUE)
+  if (max_quantidade == 0 || is.infinite(max_quantidade)) {
+    fator_escala = 1
+  } else {
+    fator_escala = max_quantidade / 100
+  }
+  
+  # criar o gráfico
+  p = df_hospital |> 
+    pivot_longer(
+      cols = c(Faltas, Agendamentos),
+      names_to = 'Tipo',
+      values_to = 'Quantidade') |> 
+    ggplot(aes(x = periodo)) +
+    geom_bar(aes(y = Quantidade, fill = Tipo),
+             stat = 'identity', position = 'dodge', alpha = 0.8) +
+    geom_text(aes(y = Quantidade/2, label = ifelse(Tipo == 'Faltas', Quantidade, ''), 
+                  group = Tipo),
+              position = position_dodge(width = 0.9),
+              color = 'white', size = 3, fontface = 'bold',
+              show.legend = FALSE) +
+    geom_text(aes(y = Quantidade, label = ifelse(Tipo == 'Agendamentos', Quantidade, ''), 
+                  group = Tipo),
+              position = position_dodge(width = 0.9),
+              vjust = -0.5, size = 3, fontface = 'bold', color = '#3BA9DB',
+              show.legend = FALSE) +
+    geom_line(aes(y = TaxaAbsenteismo * fator_escala, group = 1), 
+              color = '#2c5282', size = 1.5, alpha = 0.8) +
+    geom_point(aes(y = TaxaAbsenteismo * fator_escala), 
+               color = '#2c5282', size = 3) +
+    geom_text(aes(y = TaxaAbsenteismo * fator_escala, 
+                  label = paste0(round(TaxaAbsenteismo, 1), '%')),
+              vjust = -1, size = 3, color = '#2c5282', fontface = 'bold') +
+    scale_y_continuous(
+      name = '',
+      sec.axis = sec_axis(~ . / fator_escala, 
+                          name = '',
+                          labels = function(x) paste0(round(x, 1), '%'))
+    ) +
+    labs(
+      title = hospital_nome,
+      x = '', 
+      fill = ''
+    ) +
+    theme_minimal() +
+    theme(
+      axis.text.x = element_text(angle = 45, hjust = 1, size = 8),
+      axis.title.y.left = element_text(color = 'black'),
+      axis.text.y.left = element_text(color = 'black'),
+      axis.title.y.right = element_text(color = 'black'),
+      axis.text.y.right = element_text(color = 'black'),
+      panel.grid.major.y = element_line(color = 'gray80'),
+      panel.grid.minor.y = element_blank(),
+      legend.position = 'top',
+      plot.title = element_text(face = 'bold', hjust = 0.5, size = 12)
+    ) +
+    scale_fill_manual(values = c('Faltas' = '#1C4F66', 'Agendamentos' = '#3BA9DB'))
+  
+  return(p)
+}
+
+# criar graficos para cada hospital
+for (hospital in hospitais) {
+  print(criar_grafico_hospital(hospital))
+}
 ```
 
-No geral, os meses com os maiores números de faltas foram os meses de outubro de 2024, novembro de 2024, agosto de 2024 e dezembro de 2024
+
+```{r}
+#| echo: true
+#| code-fold: true
+#| code-summary: 'Código'
+#| warning: false
+
+# filtrando os registros que estao em ambas as bases
+df_whatsapp_filtrado = df_whatsapp |> 
+  inner_join(df_absenteismo |> 
+               select(hospital_padronizado) |> 
+               distinct(), by = 'hospital_padronizado') |> 
+  filter(hospital_padronizado != 'HOSPITAL DE MESSEJANA')
+```
+
+
+
+```{r}
+#| code-fold: true
+#| code-summary: 'Código'
+#| warning: false
+#| fig-width: 12
+#| fig-height: 8
+#| out-width: '100%'
+
+# total de disparos por hospital
+df_disparos = df_whatsapp_filtrado |> 
+  group_by(hospital_padronizado) |> 
+  summarise(disparos = sum(count, na.rm = TRUE)) |> 
+  arrange(desc(disparos))
+
+
+df_disparos |> 
+  ggplot(aes(x = reorder(hospital_padronizado, disparos), y = disparos)) +
+  geom_bar(stat = 'identity', fill = '#3BA9DB', alpha = 0.8) +
+  geom_text(aes(label = disparos), 
+            hjust = -0.1, size = 3.5, fontface = 'bold', color = 'black') +
+  coord_flip() +
+  labs(title = '',
+       x = '',
+       y = '') +
+  theme_minimal() +
+  theme(axis.text.y = element_text(size = 9),
+        axis.text.x = element_blank(),
+        plot.title = element_text(face = 'bold', hjust = 0.5),
+        panel.grid.major.y = element_blank()) +
+  scale_y_continuous(expand = expansion(mult = c(0, 0.1)))
+```
+
+
+```{r}
+#| code-fold: true
+#| code-summary: 'Código'
+#| warning: false
+#| fig-width: 10
+#| fig-height: 8
+#| out-width: '100%'
+
+# 📈 visualizacao do total de disparos por hospital
+df_whatsapp_filtrado |> 
+  group_by(hospital_padronizado, tipo_alerta) |> 
+  summarise(Total_Disparos = sum(count, na.rm = TRUE), .groups = 'drop') |> 
+  ggplot(aes(x = tipo_alerta, y = hospital_padronizado, fill = Total_Disparos)) +
+  geom_tile(color = 'white', linewidth = 0.3) +
+  geom_text(aes(label = ifelse(Total_Disparos > 0, 
+                               format(Total_Disparos, big.mark = '.'), 
+                               '')), 
+            color = 'white', size = 2.5, fontface = 'bold') +
+  scale_fill_gradient(low = 'lightblue', high = 'darkblue', name = '', trans = 'log10') +
+  labs(title = '', subtitle = paste('Total de', format(sum(df_whatsapp_filtrado$count, na.rm = TRUE), big.mark = '.'), 'Disparos'), x = '', y = '') +
+  theme_minimal() +
+  theme(
+    axis.text.x = element_text(angle = 45, hjust = 1, size = 8),
+    axis.text.y = element_text(size = 8),
+    plot.title = element_text(face = 'bold', size = 14, hjust = 0.5),
+    plot.subtitle = element_text(size = 10, hjust = 0.5),
+    panel.grid = element_blank(),
+    legend.position = 'none')
+
+```
+
+
