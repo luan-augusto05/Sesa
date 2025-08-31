@@ -6,7 +6,7 @@ df_absenteismo = read.csv('absenteismo_processed.csv')
 # dados processados sobre alertas no whatsapp
 df_whatsapp = read.csv('whatsapp_processed.csv')
 
-# glimpse(df_whatsapp)
+glimpse(df_whatsapp)
 glimpse(df_absenteismo)
 length(table(df_absenteismo$hospital_padronizado))
 # table(df_alertas$severidade)
@@ -111,7 +111,9 @@ df_totais |>
 
 glimpse(df_whatsapp)
 
-# 
+# 📈 visualizando o total de disparos por mes e por dia da semana 
+
+
 
 
 
