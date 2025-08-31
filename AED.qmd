@@ -5,7 +5,7 @@ format:
     toc: true
     html-math-method: katex
     css: styles.css
-server: shiny
+cache: true
 ---
 
 ```{r}
@@ -13,9 +13,9 @@ server: shiny
 #| warning: false
 
 library(tidyverse)
-library(shiny)
 library(ggplot2)
 library(plotly)
+library(gridExtra)
 ```
 
 ```{r}
@@ -124,3 +124,150 @@ df_totais |>
 ```
 
 No geral, os meses com os maiores números de faltas foram os meses de outubro de 2024, novembro de 2024, agosto de 2024 e dezembro de 2024
+
+```{r}
+#| fig-width: 7
+#| fig-height: 25
+df_hosp = df_absenteismo |> 
+  filter(hospital_padronizado !='HOSPITAL DE MESSEJANA' & hospital_padronizado!='HOSPITAL UNIVERSITÁRIO DO CEARÁ') |> 
+  group_by(periodo,hospital_padronizado) |> 
+  summarise(Faltas = sum(faltas, na.rm = TRUE),
+            Agendamentos = sum(agendamentos, na.rm = TRUE),
+            TaxaAbsenteismo = (sum(Faltas) / sum(Agendamentos)) * 100,
+            .groups = 'drop')
+
+# 📈 contruindo o grafico com os tres indicadores
+df_hosp |> 
+  pivot_longer(
+    cols = c(Faltas, Agendamentos),
+    names_to = 'Tipo',
+    values_to = 'Quantidade') |> 
+  ggplot(aes(x = periodo)) +
+  geom_bar(aes(y = Quantidade, fill = Tipo),
+           stat = 'identity', position = 'dodge', alpha = 0.8) +
+  geom_text(aes(y = Quantidade/2, label = ifelse(Tipo == 'Faltas', Quantidade, ''), 
+                group = Tipo),position = position_dodge(width = 0.9),
+            color = 'white', size = 3.5, fontface = 'bold',
+            show.legend = FALSE) +
+  geom_text(aes(y = Quantidade, label = ifelse(Tipo == 'Agendamentos', Quantidade, ''), group = Tipo),
+            position = position_dodge(width = 0.9),
+            vjust = -0.5, size = 3.5, fontface = 'bold', color = '#3BA9DB',
+            show.legend = FALSE) +
+  
+  # Linha para a taxa de absenteísmo
+  geom_line(aes(y = TaxaAbsenteismo * fator_escala, group = 1), 
+            color = '#2c5282', size = 1.5, alpha = 0.8) +
+  geom_point(aes(y = TaxaAbsenteismo * fator_escala), 
+             color = '#2c5282', size = 3) +
+  geom_text(aes(y = TaxaAbsenteismo * fator_escala, 
+                label = paste0(round(TaxaAbsenteismo, 1), '%')),
+            vjust = -1, size = 3.5, color = '#2c5282', fontface = 'bold') +
+  scale_y_continuous(
+    name = '',
+    sec.axis = sec_axis(~ . / fator_escala, 
+                        name = '',
+                        labels = function(x) paste0(round(x, 2), '%'))
+  ) +
+  labs(title = '', x = '', fill = '') +
+  theme_minimal() +
+  theme(
+    axis.text.x = element_text(angle = 45, hjust = 1),
+    axis.title.y.left = element_text(color = 'black'),
+    axis.text.y.left = element_text(color = 'black'),
+    axis.title.y.right = element_text(color = 'black'),
+    axis.text.y.right = element_text(color = 'black'),
+    panel.grid.major.y = element_line(color = 'gray80'),
+    panel.grid.minor.y = element_blank(),
+    legend.position = 'top'
+  ) +
+  scale_fill_manual(values = c('Faltas' = '#1C4F66', 'Agendamentos' = '#3BA9DB'))+
+  facet_wrap(~hospital_padronizado, scales = "free_y",ncol = 2)
+```
+
+```{r}
+#| fig-width: 15
+#| fig-height: 25
+# 📈 gerando o grafico com os tres indicadores para cada hospital
+hospitais = unique(df_absenteismo$hospital_padronizado)
+hospitais = hospitais[hospitais != 'HOSPITAL DE MESSEJANA']
+
+# funcao para criar o grafico para cada hospital
+criar_grafico_hospital = function(hospital_nome) {
+  
+  # filtrar dados para o hospital especifico
+  df_hospital = df_absenteismo |> 
+    filter(hospital_padronizado == hospital_nome) |> 
+    group_by(periodo) |> 
+    summarise(
+      Faltas = sum(faltas, na.rm = TRUE),
+      Agendamentos = sum(agendamentos, na.rm = TRUE),
+      TaxaAbsenteismo = ifelse(Agendamentos > 0, (Faltas / Agendamentos) * 100, 0),
+      .groups = 'drop'
+    )
+  
+  # calcular fator de escala para este hospital
+  max_quantidade = max(df_hospital$Faltas, df_hospital$Agendamentos, na.rm = TRUE)
+  if (max_quantidade == 0 || is.infinite(max_quantidade)) {
+    fator_escala = 1
+  } else {
+    fator_escala = max_quantidade / 100
+  }
+  
+  # criar o gráfico
+  p = df_hospital |> 
+    pivot_longer(
+      cols = c(Faltas, Agendamentos),
+      names_to = 'Tipo',
+      values_to = 'Quantidade') |> 
+    ggplot(aes(x = periodo)) +
+    geom_bar(aes(y = Quantidade, fill = Tipo),
+             stat = 'identity', position = 'dodge', alpha = 0.8) +
+    geom_text(aes(y = Quantidade/2, label = ifelse(Tipo == 'Faltas', Quantidade, ''), 
+                  group = Tipo),
+              position = position_dodge(width = 0.9),
+              color = 'white', size = 3, fontface = 'bold',
+              show.legend = FALSE) +
+    geom_text(aes(y = Quantidade, label = ifelse(Tipo == 'Agendamentos', Quantidade, ''), 
+                  group = Tipo),
+              position = position_dodge(width = 0.9),
+              vjust = -0.5, size = 3, fontface = 'bold', color = '#3BA9DB',
+              show.legend = FALSE) +
+    geom_line(aes(y = TaxaAbsenteismo * fator_escala, group = 1), 
+              color = '#2c5282', size = 1.5, alpha = 0.8) +
+    geom_point(aes(y = TaxaAbsenteismo * fator_escala), 
+               color = '#2c5282', size = 3) +
+    geom_text(aes(y = TaxaAbsenteismo * fator_escala, 
+                  label = paste0(round(TaxaAbsenteismo, 1), '%')),
+              vjust = -1, size = 3, color = '#2c5282', fontface = 'bold') +
+    scale_y_continuous(
+      name = '',
+      sec.axis = sec_axis(~ . / fator_escala, 
+                          name = '',
+                          labels = function(x) paste0(round(x, 1), '%'))
+    ) +
+    labs(
+      title = hospital_nome,
+      x = '', 
+      fill = ''
+    ) +
+    theme_minimal() +
+    theme(
+      axis.text.x = element_text(angle = 45, hjust = 1, size = 8),
+      axis.title.y.left = element_text(color = 'black'),
+      axis.text.y.left = element_text(color = 'black'),
+      axis.title.y.right = element_text(color = 'black'),
+      axis.text.y.right = element_text(color = 'black'),
+      panel.grid.major.y = element_line(color = 'gray80'),
+      panel.grid.minor.y = element_blank(),
+      legend.position = 'top',
+      plot.title = element_text(face = 'bold', hjust = 0.5, size = 12)
+    ) +
+    scale_fill_manual(values = c('Faltas' = '#1C4F66', 'Agendamentos' = '#3BA9DB'))
+  
+  return(p)
+}
+
+plots <- lapply(hospitais, criar_grafico_hospital)
+
+grid.arrange(grobs = plots, ncol = 2)
+```

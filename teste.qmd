@@ -6,22 +6,30 @@ runtime: shiny
 
 ```{r}
 library(shiny)
-# menu suspenso
-selectInput("hospital", "Hospital:",
-            choices = c("Hospital A", "Hospital B", "Hospital C"))
+library(tidyverse)
+df_absenteismo = read.csv('absenteismo_processed.csv')
+hos <- unique(df_absenteismo$hospital_padronizado)
+selectInput("hospital", "Hospital:", choices = hos, selected = hos[1])
+plotOutput("Plot2")
 ```
 
 ```{r}
-# gráfico que depende do input
-renderPlot({
+output$Plot2 <- renderPlot({
   hosp <- input$hospital
   set.seed(123)
-  df <- data.frame(
-    x = 1:10,
-    y = rnorm(10, mean = ifelse(hosp == "Hospital A", 5,
-                           ifelse(hosp == "Hospital B", 10, 15)))
-  )
-  plot(df$x, df$y, type = "b", main = paste("Dados de", hosp))
+  
+  df <- df_absenteismo |>
+    dplyr::filter(hospital_padronizado == hosp) |>   # filtro pelo input
+    tidyr::pivot_longer(
+      cols = c(Faltas, Agendamentos),
+      names_to = 'Tipo',
+      values_to = 'Quantidade'
+    )
+  
+  plot(df$Quantidade ~ df$Tipo,
+       main = paste("Dados de", hosp),
+       xlab = "Tipo",
+       ylab = "Quantidade")
 })
 
 ```
