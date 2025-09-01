@@ -1,9 +1,5 @@
 Version: 1.0
-<<<<<<< HEAD
 ProjectId: 5ae20b94-fa2f-422c-9b61-dbd7f55819ac
-=======
-ProjectId: 384d8b83-87e8-43f9-9eb8-b324bae1564a
->>>>>>> 7ca8c052bf220f5f3b71e4e2217ace6bb89b4a96
 
 RestoreWorkspace: Default
 SaveWorkspace: Default
