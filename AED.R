@@ -155,6 +155,15 @@ for (hospital in hospitais) {
   print(criar_grafico_hospital(hospital))
 }
 
+# 📊 medidas descritivas sobre a taxa de absenteismo para cada hospital
+df_absenteismo |> 
+  filter(hospital_padronizado != 'HOSPITAL DE MESSEJANA') |> 
+  group_by(hospital_padronizado) |> 
+  summarise(taxa_media = mean(taxa_absenteismo, na.rm = TRUE),
+            taxa_mediana = median(taxa_absenteismo, na.rm = TRUE),
+            dp_taxa = sd(taxa_absenteismo, na.rm = TRUE),
+            cv_taxa = sd(taxa_absenteismo, na.rm = TRUE) / mean(taxa_absenteismo, na.rm = TRUE)) |> 
+  mutate(cv_taxa  = scales::percent(cv_taxa, accuracy = 0.01))
 
 # 🔍 na base df_whatsapp estao os registros dos disparos apos a politica publica ser implementada, ou seja, ha registros de marco ate o mes de agosto
 

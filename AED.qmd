@@ -1,10 +1,15 @@
 ---
 title: 'Análise Exploratória'
+author:
+  - 'Romulo Freitas'
+  - 'Luan Augusto'
+lang: pt-br
+#date: today
 format:
   html:
     toc: true
+    toc-title: 'Sumário'
     html-math-method: katex
-    css: styles.css
 cache: true
 ---
 
@@ -20,6 +25,12 @@ library(shiny)
 library(plotly)
 library(gridExtra)
 ```
+
+# Descrição das bases
+
+📑 Na base sobre absenteísmo haviam o registros de 12 hospitais, sendo que o Hospital de Messejana apresentou todos os registros `NA.`
+
+📑 Na base sobre os disparos de WhatsApp haviam o registro 68 hospitais
 
 ```{r}
 #| echo: true
@@ -80,7 +91,7 @@ df_totais |>
   geom_bar(aes(y = Quantidade, fill = Tipo),
            stat = 'identity', position = 'dodge', alpha = 0.8) +
   geom_text(aes(y = Quantidade/2, label = ifelse(Tipo == 'Faltas', Quantidade, ''), 
-                group = Tipo),position = position_dodge(width = 0.9),
+                group = Tipo), position = position_dodge(width = 0.9),
             color = 'white', size = 3.5, fontface = 'bold',
             show.legend = FALSE) +
   geom_text(aes(y = Quantidade, label = ifelse(Tipo == 'Agendamentos', Quantidade, ''), group = Tipo),
@@ -88,11 +99,11 @@ df_totais |>
             vjust = -0.5, size = 3.5, fontface = 'bold', color = '#3BA9DB',
             show.legend = FALSE) +
   
-  # Linha para a taxa de absenteísmo
-  geom_line(aes(y = TaxaAbsenteismo * fator_escala, group = 1), 
-            color = '#2c5282', size = 1.5, alpha = 0.8) +
-  geom_point(aes(y = TaxaAbsenteismo * fator_escala), 
-             color = '#2c5282', size = 3) +
+  # Linha para a taxa de absenteísmo - adicionar aes(color)
+  geom_line(aes(y = TaxaAbsenteismo * fator_escala, group = 1, color = 'Taxa de Absenteísmo'), 
+            size = 1.5, alpha = 0.8) +
+  geom_point(aes(y = TaxaAbsenteismo * fator_escala, color = 'Taxa de Absenteísmo'), 
+             size = 3) +
   geom_text(aes(y = TaxaAbsenteismo * fator_escala, 
                 label = paste0(round(TaxaAbsenteismo, 1), '%')),
             vjust = -1, size = 3.5, color = '#2c5282', fontface = 'bold') +
@@ -102,7 +113,7 @@ df_totais |>
                         name = '',
                         labels = function(x) paste0(round(x, 2), '%'))
   ) +
-  labs(title = '', x = '', fill = '') +
+  labs(title = '', x = '', fill = '', color = '') +
   theme_minimal() +
   theme(
     axis.text.x = element_text(angle = 45, hjust = 1),
@@ -114,17 +125,18 @@ df_totais |>
     panel.grid.minor.y = element_blank(),
     legend.position = 'top'
   ) +
-  scale_fill_manual(values = c('Faltas' = '#1C4F66', 'Agendamentos' = '#3BA9DB'))
+  scale_fill_manual(values = c('Faltas' = '#1C4F66', 'Agendamentos' = '#3BA9DB')) +
+  scale_color_manual(values = c('Taxa de Absenteísmo' = '#2c5282'))
 ```
 
-📑 Analisando
+## Análise para cada hospital
 
 ```{r}
 #| code-fold: true
 #| code-summary: 'Código'
 #| warning: false
-#| fig-width: 15
-#| fig-height: 25
+#| fig-width: 14
+#| fig-height: 10
 #| out-width: '100%'
 # 📈 gerando o grafico com os tres indicadores para cada hospital
 hospitais = unique(df_absenteismo$hospital_padronizado)
@@ -171,10 +183,12 @@ criar_grafico_hospital = function(hospital_nome) {
               position = position_dodge(width = 0.9),
               vjust = -0.5, size = 3, fontface = 'bold', color = '#3BA9DB',
               show.legend = FALSE) +
-    geom_line(aes(y = TaxaAbsenteismo * fator_escala, group = 1), 
-              color = '#2c5282', size = 1.5, alpha = 0.8) +
-    geom_point(aes(y = TaxaAbsenteismo * fator_escala), 
-               color = '#2c5282', size = 3) +
+    
+    # Adicionar esteticas para a legenda da taxa
+    geom_line(aes(y = TaxaAbsenteismo * fator_escala, group = 1, color = 'Taxa de Absenteísmo'), 
+              size = 1.5, alpha = 0.8) +
+    geom_point(aes(y = TaxaAbsenteismo * fator_escala, color = 'Taxa de Absenteísmo'), 
+               size = 3) +
     geom_text(aes(y = TaxaAbsenteismo * fator_escala, 
                   label = paste0(round(TaxaAbsenteismo, 1), '%')),
               vjust = -1, size = 3, color = '#2c5282', fontface = 'bold') +
@@ -187,7 +201,8 @@ criar_grafico_hospital = function(hospital_nome) {
     labs(
       title = hospital_nome,
       x = '', 
-      fill = ''
+      fill = '',
+      color = ''
     ) +
     theme_minimal() +
     theme(
@@ -199,19 +214,44 @@ criar_grafico_hospital = function(hospital_nome) {
       panel.grid.major.y = element_line(color = 'gray80'),
       panel.grid.minor.y = element_blank(),
       legend.position = 'top',
-      plot.title = element_text(face = 'bold', hjust = 0.5, size = 12)
+      plot.title = element_text(face = 'bold', hjust = 0.5, size = 12),
+      legend.box = 'horizontal'
     ) +
-    scale_fill_manual(values = c('Faltas' = '#1C4F66', 'Agendamentos' = '#3BA9DB'))
+    scale_fill_manual(values = c('Faltas' = '#1C4F66', 'Agendamentos' = '#3BA9DB')) +
+    scale_color_manual(values = c('Taxa de Absenteísmo' = '#2c5282')) +
+    guides(
+      fill = guide_legend(order = 1),
+      color = guide_legend(order = 2)
+    )
   
   return(p)
 }
 
-plots <- lapply(hospitais, criar_grafico_hospital)
-
-grid.arrange(grobs = plots, ncol = 2)
+# criar gráficos para cada hospital
+for (hospital in hospitais) {
+  print(criar_grafico_hospital(hospital))
+}
 ```
 
 Observa-se que o Hospital Geral de Fortaleza e o Hospital José Martiniano de Alencar foram os que apresentaram maiores taxas de abseteímo, com meses ultrapassando 80%, mesmo após a implementação dos disparos por whatsapp. Os demais hospitais possuem taxas por volta de 10% a 20%.
+
+```{r}
+#| code-fold: true
+#| code-summary: 'Código'
+#| warning: false
+
+# 📊 medidas descritivas sobre a taxa de absenteismo para cada hospital
+df_absenteismo |> 
+  filter(hospital_padronizado != 'HOSPITAL DE MESSEJANA') |> 
+  group_by(hospital_padronizado) |> 
+  summarise(taxa_media = mean(taxa_absenteismo, na.rm = TRUE),
+            taxa_mediana = median(taxa_absenteismo, na.rm = TRUE),
+            dp_taxa = sd(taxa_absenteismo, na.rm = TRUE),
+            cv_taxa = sd(taxa_absenteismo, na.rm = TRUE) / mean(taxa_absenteismo, na.rm = TRUE)) |> 
+  mutate(cv_taxa  = scales::percent(cv_taxa, accuracy = 0.01)) |> 
+  knitr::kable(digits = 2)
+```
+
 
 ```{r}
 #| echo: true
