@@ -49,6 +49,11 @@ df_totais |>
   geom_text(aes(y = TaxaAbsenteismo * fator_escala, 
                 label = paste0(round(TaxaAbsenteismo, 1), '%')),
             vjust = -1, size = 3.5, color = '#2c5282', fontface = 'bold') +
+  
+  # Linha pontilhada vermelha no mês 2025 - 03
+  geom_vline(xintercept = which(unique(df_totais$periodo) == '2025 - 03'),
+             linetype = "dashed", color = 'red3', size = 1) +
+  
   scale_y_continuous(
     name = '',
     sec.axis = sec_axis(~ . / fator_escala, 
