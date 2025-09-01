@@ -1,10 +1,9 @@
 ---
-title: 'Análise Exploratória'
+title: 'Análise Exploratória - Projeto SESA'
 author:
   - 'Romulo Freitas'
   - 'Luan Augusto'
 lang: pt-br
-#date: today
 format:
   html:
     toc: true
@@ -57,6 +56,8 @@ hospitais = hospitais[hospitais != 'HOSPITAL DE MESSEJANA']
 
 hospitais
 ```
+
+# Análise Absenteísmo
 
 📑 Inicialmente, analisou-se o total de agendamentos, o total de faltas e a taxa de absenteísmo geral e por unidade hospitalar. No geral, os meses com os maiores números de faltas foram os meses de outubro de 2024, novembro de 2024, agosto de 2024 e dezembro de 2024, respectivamente. Também, observa-se uma queda consecutiva na taxa absenteísmo nos últimos três meses.
 
@@ -233,7 +234,7 @@ for (hospital in hospitais) {
 }
 ```
 
-Observa-se que o Hospital Geral de Fortaleza e o Hospital José Martiniano de Alencar foram os que apresentaram maiores taxas de abseteímo, com meses ultrapassando 80%, mesmo após a implementação dos disparos por whatsapp. Os demais hospitais possuem taxas por volta de 10% a 20%.
+Verifica-se que o Hospital Geral de Fortaleza e o Hospital José Martiniano de Alencar apresentaram as maiores taxas de absenteísmo, ultrapassando 80% em alguns meses, mesmo após a implementação dos disparos via WhatsApp. Nos demais hospitais, as taxas permaneceram em níveis consideravelmente mais baixos, variando entre 10% e 20%.
 
 ```{r}
 #| code-fold: true
@@ -252,7 +253,6 @@ df_absenteismo |>
   knitr::kable(digits = 2)
 ```
 
-
 ```{r}
 #| echo: true
 #| code-fold: true
@@ -266,6 +266,14 @@ df_whatsapp_filtrado = df_whatsapp |>
                distinct(), by = 'hospital_padronizado') |> 
   filter(hospital_padronizado != 'HOSPITAL DE MESSEJANA')
 ```
+
+# Análise dos disparos de Whatsapp
+
+Foi realizada uma análise dos disparos de WhatsApp nos hospitais presentes na base de absenteísmo. Observa-se que o Hospital Geral de Fortaleza (HGF) concentra o maior número de disparos, registrando volume 13 vezes superior ao do segundo colocado, o Hospital Regional do Sertão Central. Esse resultado acompanha o fato de o HGF também ser o hospital com maior número de agendamentos, embora, nesse caso, a diferença em relação aos demais não seja tão expressiva.
+
+Por outro lado, o Hospital José Martiniano de Alencar apresentou a menor quantidade de disparos, ponto que merece atenção, já que é uma das unidades com maiores taxas de absenteísmo.
+
+Em relação ao tipo de disparo, os de **agendamento** foram os mais frequentes, seguidos pelos disparos de **pré 2 dias** e **pré 10 dias**.
 
 ```{r}
 #| code-fold: true
@@ -330,4 +338,4 @@ df_whatsapp_filtrado |>
 
 ```
 
-Teve-se a ideia de realizar uma comparação entre a quantidade de disparos e a taxa de abseteísmo por mês, porém, notou-se que na base de envios de whatsapp enviada, não possuía valores para todos os meses. Por exemplo: Para o Hospital Geral de Fortaleza, só havia registros de disparos de agendamentos para os meses de março, junho e julho, faltando os meses de abril e maio.
+Foi proposta a comparação entre a quantidade de disparos realizados e a taxa de absenteísmo por mês. No entanto, observou-se que a base de envios de WhatsApp disponibilizada não continha registros para todos os meses. Por exemplo, no caso do Hospital Geral de Fortaleza, havia informações apenas para março, junho e julho, enquanto os meses de abril e maio não apresentavam dados de disparos de agendamentos.
