@@ -5,19 +5,16 @@ author:
   - 'Luan Augusto'
 lang: pt-br
 format:
-  html:
+  docx:
     toc: true
     toc-title: 'Sumário'
     html-math-method: katex
-cache: true
+execute:
+  echo: false
+  warning: false
 ---
 
 ```{r}
-#| echo: true
-#| warning: false
-#| code-fold: true
-#| code-summary: 'Código'
-
 # 📚 Bibliotecas
 library(tidyverse)
 library(shiny)
@@ -32,11 +29,6 @@ library(gridExtra)
 📑 Na base sobre os disparos de WhatsApp haviam o registro 68 hospitais
 
 ```{r}
-#| echo: true
-#| code-fold: true
-#| code-summary: 'Código'
-#| warning: false
-
 # dados processados sobre absenteismo
 df_absenteismo = read.csv('absenteismo_processed.csv')
 # dados processados sobre alertas no whatsapp
@@ -46,10 +38,6 @@ df_whatsapp = read.csv('whatsapp_processed.csv')
 📑 Para a análise exploratória dos dados foram considerados os registros dos hospitais presentes nas duas bases disponibilizadas. Além disso, o HOSPITAL DE MESSEJANA não apresentou registros na base de absenteísmo.
 
 ```{r}
-#| echo: true
-#| code-fold: true
-#| code-summary: 'Código'
-#| warning: false
 
 hospitais = unique(df_absenteismo$hospital_padronizado)
 hospitais = hospitais[hospitais != 'HOSPITAL DE MESSEJANA']
@@ -62,13 +50,8 @@ hospitais
 📑 Inicialmente, analisou-se o total de agendamentos, o total de faltas e a taxa de absenteísmo geral e por unidade hospitalar. No geral, os meses com os maiores números de faltas foram os meses de outubro de 2024, novembro de 2024, agosto de 2024 e dezembro de 2024, respectivamente. Também, observa-se uma queda consecutiva na taxa absenteísmo nos últimos três meses.
 
 ```{r}
-#| echo: true
-#| code-fold: true
-#| code-summary: 'Código'
-#| warning: false
 #| fig-width: 14
 #| fig-height: 10
-#| out-width: '100%'
 
 # calcular os totais e a taxa de absenteísmo
 df_totais = df_absenteismo |> 
@@ -133,12 +116,8 @@ df_totais |>
 ## Análise para cada hospital
 
 ```{r}
-#| code-fold: true
-#| code-summary: 'Código'
-#| warning: false
 #| fig-width: 14
 #| fig-height: 10
-#| out-width: '100%'
 # 📈 gerando o grafico com os tres indicadores para cada hospital
 hospitais = unique(df_absenteismo$hospital_padronizado)
 hospitais = hospitais[hospitais != 'HOSPITAL DE MESSEJANA']
@@ -237,9 +216,6 @@ for (hospital in hospitais) {
 Verifica-se que o Hospital Geral de Fortaleza e o Hospital José Martiniano de Alencar apresentaram as maiores taxas de absenteísmo, ultrapassando 80% em alguns meses, mesmo após a implementação dos disparos via WhatsApp. Nos demais hospitais, as taxas permaneceram em níveis consideravelmente mais baixos, variando entre 10% e 20%.
 
 ```{r}
-#| code-fold: true
-#| code-summary: 'Código'
-#| warning: false
 
 # 📊 medidas descritivas sobre a taxa de absenteismo para cada hospital
 df_absenteismo |> 
@@ -254,10 +230,6 @@ df_absenteismo |>
 ```
 
 ```{r}
-#| echo: true
-#| code-fold: true
-#| code-summary: 'Código'
-#| warning: false
 
 # filtrando os registros que estao em ambas as bases
 df_whatsapp_filtrado = df_whatsapp |> 
@@ -276,12 +248,8 @@ Por outro lado, o Hospital José Martiniano de Alencar apresentou a menor quanti
 Em relação ao tipo de disparo, os de **agendamento** foram os mais frequentes, seguidos pelos disparos de **pré 2 dias** e **pré 10 dias**.
 
 ```{r}
-#| code-fold: true
-#| code-summary: 'Código'
-#| warning: false
 #| fig-width: 12
 #| fig-height: 8
-#| out-width: '100%'
 
 # total de disparos por hospital
 df_disparos = df_whatsapp_filtrado |> 
@@ -308,12 +276,8 @@ df_disparos |>
 ```
 
 ```{r}
-#| code-fold: true
-#| code-summary: 'Código'
-#| warning: false
 #| fig-width: 10
 #| fig-height: 8
-#| out-width: '100%'
 
 # 📈 visualizacao do total de disparos por hospital
 df_whatsapp_filtrado |> 

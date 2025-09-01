@@ -1,0 +1,10 @@
+name: Publish Document
+title:
+username:
+account: rpubs
+server: rpubs.com
+hostUrl: rpubs.com
+appId: https://api.rpubs.com/api/v1/document/1340186/d142114d0d974720906cf16b2c621cf0
+bundleId: https://api.rpubs.com/api/v1/document/1340186/d142114d0d974720906cf16b2c621cf0
+url: http://rpubs.com/luanaugusto05/1340186
+version: 1
