@@ -1,0 +1,62 @@
+---
+title: 'Testando o Quarto Mrkdown no VS Code'
+author: 'Romulo Freitas'
+format:
+    html:
+        mainfont: 'Gill Sans'
+        toc: true
+        toc-title: 'Sumário'
+        toc-depth: 2
+        smooth-scroll: true
+        toc-location: left
+        theme: 'Cyborg'
+editor: visual
+jupyter: python3
+---
+
+# Introdução
+
+Nessa parte do teste ficará a introdução do documento
+
+```{python setup, include=FALSE}
+# import libraries
+import pandas as pd
+# from datetime import datetime  # equivalente ao lubridate no R
+
+# dados processados sobre absenteismo
+df_absenteismo = pd.read_csv('absenteismo_processed.csv')
+
+# dados processados sobre alertas no whatsapp
+df_whatsapp = pd.read_csv('whatsapp_processed.csv')
+```
+
+# Charts and Images
+
+
+## Iteractive Bar Plot
+
+```{python setup, include=FALSE}
+import pandas as pd
+from pydataset import data
+import numpy as np
+import matplotlib.pyplot as plt
+import seaborn as sns
+import plotly.express as px
+import plotly.graph_objects as go
+import plotly.io as pio
+import plotly as py
+# pio.renderers.default = 'notebook_connected'
+```
+
+```{python echo=FALSE, message=FALSE, warning=FALSE}
+# Setup and Libraries used 
+
+# Create a dataframe from the pydataset data
+df = data('mtcars')
+# Use plotly express to create a bar chart
+fig = px.bar(df, x='cyl', y='mpg', color='cyl', barmode='group')
+# Show the plot
+fig.show()
+#fig.show(renderer='browser')
+```
+
