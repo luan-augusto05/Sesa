@@ -13,7 +13,7 @@ glimpse(df_whatsapp)
 # calcular os totais e a taxa de absenteísmo
 df_totais = df_absenteismo |> 
   filter(hospital_padronizado != 'HOSPITAL DE MESSEJANA') |> 
-  group_by(periodo) |> 
+  group_by(periodo) |>
   summarise(Faltas = sum(faltas, na.rm = TRUE),
             Agendamentos = sum(agendamentos, na.rm = TRUE),
             TaxaAbsenteismo = (sum(Faltas) / sum(Agendamentos)) * 100,
