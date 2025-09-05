@@ -4,4 +4,5 @@ Ideias de Análise
 
 2 - Inicialmente, direcionar as análises para a cidade e o hospital
 
-3 - 
+3 - Fazer análise por mês e por especialidade
+4 - Análise por mês e cidade de residência
